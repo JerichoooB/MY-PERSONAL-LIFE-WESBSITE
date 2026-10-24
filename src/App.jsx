@@ -72,6 +72,8 @@ import Markdown from "react-markdown";
 import Offline from "./Offline";
 import GlobalSearch from "./GlobalSearch";
 import ScheduleImport from "./ScheduleImport";
+import { TimeInput, DateTimeInput } from "./TimeInput";
+import { formatTime } from "./time.js";
 import { mergeSchedule, graphicsScheduleCorrection } from "./schedule.js";
 import {
   repository,
@@ -613,7 +615,7 @@ function TaskRow({ task: t }) {
         <strong>{t.title}</strong>
         <small>
           {t.category}
-          {t.time && ` · ${t.time}`}
+          {t.time && ` · ${formatTime(t.time)}`}
         </small>
       </button>
       <Badge color={t.priority.toLowerCase()}>
@@ -700,7 +702,7 @@ function Overview() {
                 >
                   {t.title}
                 </button>
-                {t.time && <small>{t.time}</small>}
+                {t.time && <small>{formatTime(t.time)}</small>}
               </div>
             ))}
           </div>
@@ -938,10 +940,7 @@ function Overview() {
                     onClick={() => open(e.kind, e)}
                   >
                     <span className="reference-event-time">
-                      {new Date(`2000-01-01T${e.time}`).toLocaleTimeString(
-                        "en-US",
-                        { hour: "numeric", minute: "2-digit" },
-                      )}
+                      {formatTime(e.time)}
                       <small>{e.category}</small>
                     </span>
                     <div>
@@ -1383,12 +1382,7 @@ function CalendarPage() {
                 <i style={{ background: e.color }} />
                 <div>
                   <strong>{e.title}</strong>
-                  <small>
-                    {new Date(e.start).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </small>
+                  <small>{formatTime(e.start)}</small>
                 </div>
               </button>
             ))}
@@ -2944,19 +2938,41 @@ function Editor({ kind, item, extra, close }) {
     }
     close();
   };
-  const field = (label, key, type = "text", props = {}) => (
-    <label>
-      {label}
-      <input
-        type={type}
-        value={form[key]}
-        onChange={(e) =>
-          change(key, type === "number" ? e.target.value : e.target.value)
-        }
-        {...props}
-      />
-    </label>
-  );
+  const field = (label, key, type = "text", props = {}) => {
+    if (type === "time" || type === "datetime-local")
+      return (
+        <div className="editor-time-field">
+          <span>{label}</span>
+          {type === "time" ? (
+            <TimeInput
+              label={label}
+              value={form[key]}
+              onChange={(value) => change(key, value)}
+              required={props.required}
+              clearable={!props.required}
+            />
+          ) : (
+            <DateTimeInput
+              label={label}
+              value={form[key]}
+              onChange={(value) => change(key, value)}
+              required={props.required}
+            />
+          )}
+        </div>
+      );
+    return (
+      <label>
+        {label}
+        <input
+          type={type}
+          value={form[key]}
+          onChange={(e) => change(key, e.target.value)}
+          {...props}
+        />
+      </label>
+    );
+  };
   const area = (label, key, rows = 3) => (
     <label>
       {label}

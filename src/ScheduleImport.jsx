@@ -3,11 +3,7 @@ import { Upload, Download, CalendarDays, Check, BookOpen } from "lucide-react";
 import template from "./templates/second-year-schedule.json";
 import { validateSchedule, previewSchedule, dayNames } from "./schedule.js";
 import "./schedule.css";
-const time = (value) =>
-  new Date(`2000-01-01T${value}`).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+import { formatTime as time, formatDateTime } from "./time.js";
 export default function ScheduleImport({ existing, onImport, onClose }) {
   const [schedule, setSchedule] = useState(template);
   const [start, setStart] = useState("");
@@ -217,9 +213,9 @@ export default function ScheduleImport({ existing, onImport, onClose }) {
             </div>
             {preview.events.length > 0 && (
               <p className="muted">
-                First event: {preview.events[0].start.replace("T", " at ")}
+                First event: {formatDateTime(preview.events[0].start)}
                 <br />
-                Last event: {preview.events.at(-1).start.replace("T", " at ")}
+                Last event: {formatDateTime(preview.events.at(-1).start)}
               </p>
             )}
             {preview.conflicts.length > 0 && (
@@ -233,7 +229,7 @@ export default function ScheduleImport({ existing, onImport, onClose }) {
                 </p>
                 {preview.conflicts.slice(0, 3).map((c, i) => (
                   <small key={i}>
-                    {c.start.replace("T", " ")} · {c.title} overlaps {c.other}
+                    {formatDateTime(c.start)} · {c.title} overlaps {c.other}
                   </small>
                 ))}
                 <label>

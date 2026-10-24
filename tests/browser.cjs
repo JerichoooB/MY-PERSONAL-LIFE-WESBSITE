@@ -55,8 +55,14 @@ const artifacts = fs.mkdtempSync("/tmp/lifeos-browser-");
   await dialog().getByRole("button", { name: "Save changes" }).click();
   await go("/calendar");
   await create("Lecture", "New event", async (d) => {
-    await d.getByLabel("Starts", { exact: true }).fill("2026-10-24T09:00");
-    await d.getByLabel("Ends", { exact: true }).fill("2026-10-24T10:00");
+    await d.getByLabel("Starts date", { exact: true }).fill("2026-10-24");
+    await d.getByLabel("Starts hour", { exact: true }).selectOption("9");
+    await d.getByLabel("Starts minute", { exact: true }).selectOption("00");
+    await d.getByLabel("Starts AM or PM", { exact: true }).selectOption("AM");
+    await d.getByLabel("Ends date", { exact: true }).fill("2026-10-24");
+    await d.getByLabel("Ends hour", { exact: true }).selectOption("10");
+    await d.getByLabel("Ends minute", { exact: true }).selectOption("00");
+    await d.getByLabel("Ends AM or PM", { exact: true }).selectOption("AM");
   });
   await go("/notes");
   await create("Class notes", "New note", async (d) => {
