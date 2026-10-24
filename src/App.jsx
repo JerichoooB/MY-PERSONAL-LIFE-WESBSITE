@@ -72,7 +72,7 @@ import Markdown from "react-markdown";
 import Offline from "./Offline";
 import GlobalSearch from "./GlobalSearch";
 import ScheduleImport from "./ScheduleImport";
-import { mergeSchedule } from "./schedule.js";
+import { mergeSchedule, graphicsScheduleCorrection } from "./schedule.js";
 import {
   repository,
   initialData,
@@ -1250,7 +1250,8 @@ function DeleteItem({ collection, id }) {
   return <Confirm onConfirm={() => remove(collection, id)} />;
 }
 function CalendarPage() {
-  const { data, open, update, notify } = useApp();
+  const { data, open, update, notify, confirm } = useApp();
+  const correction = graphicsScheduleCorrection(data.events);
   const [importing, setImporting] = useState(false);
   const [selected, setSelected] = useState(dateKey());
   const [month, setMonth] = useState(dateKey().slice(0, 7));
@@ -1295,6 +1296,48 @@ function CalendarPage() {
           </div>
         }
       />
+      {correction && (
+        <div className="schedule-correction">
+          <div>
+            <strong>Graphics class schedule changed</strong>
+            <p>
+              ITW 213 is now Monday, 1:00–2:00 PM, replacing Tuesday/Thursday
+              1:00–2:30 PM.
+            </p>
+            <small>
+              {correction.removed} old class events will be removed;{" "}
+              {correction.added} Monday events will be added within your
+              imported dates ({correction.start} to {correction.end}).
+              {correction.conflicts.length > 0 &&
+                ` ${correction.conflicts.length} overlap(s) with existing events.`}
+            </small>
+          </div>
+          <Button
+            secondary
+            onClick={() =>
+              confirm(
+                `Apply the Graphics class change? Remove ${correction.removed} old Tuesday/Thursday slots and add ${correction.added} Monday 1:00–2:00 PM slots within your imported dates.${
+                  correction.conflicts.length
+                    ? ` This overlaps ${correction.conflicts
+                        .map((c) => `${c.title} on ${c.date}`)
+                        .slice(0, 3)
+                        .join(", ")}.`
+                    : ""
+                } Other events stay in place.`,
+                () => {
+                  update(
+                    "events",
+                    (old) => graphicsScheduleCorrection(old)?.events || old,
+                  );
+                  notify("Graphics moved to Monday, 1:00–2:00 PM.");
+                },
+              )
+            }
+          >
+            Apply class change
+          </Button>
+        </div>
+      )}
       {importing && (
         <Modal
           wide

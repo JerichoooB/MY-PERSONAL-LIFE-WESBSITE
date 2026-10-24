@@ -169,3 +169,56 @@ export function mergeSchedule(existing, additions) {
     }),
   ];
 }
+
+// Correct only recognizable imported Graphics slots; unrelated/manual events stay intact.
+export function graphicsScheduleCorrection(existing) {
+  const prefix = "schedule:second-year-schedule:itw213:";
+  const title = "ITW 213 · Graphics Designing (Photoshop)";
+  const outdated = existing.filter(
+    (e) =>
+      e.id.startsWith(prefix) &&
+      e.title === title &&
+      e.start.slice(11) === "13:00" &&
+      e.end.slice(11) === "14:30" &&
+      [2, 4].includes(new Date(`${e.start.slice(0, 10)}T12:00:00`).getDay()),
+  );
+  if (!outdated.length) return null;
+  const dates = existing
+    .filter((e) => e.id.startsWith("schedule:second-year-schedule:"))
+    .map((e) => e.start.slice(0, 10))
+    .sort();
+  const importedDays = new Set(dates);
+  const start = dates[0],
+    end = dates.at(-1);
+  const removed = new Set(outdated.map((e) => e.id));
+  const kept = existing.filter((e) => !removed.has(e.id));
+  const additions = [];
+  for (const event of outdated) {
+    const oldDate = event.start.slice(0, 10);
+    const day = new Date(`${oldDate}T12:00:00`).getDay();
+    const monday = addDays(oldDate, -((day + 6) % 7));
+    if (monday < start || monday > end || !importedDays.has(monday)) continue;
+    additions.push({
+      ...event,
+      id: prefix + monday,
+      start: `${monday}T13:00`,
+      end: `${monday}T14:00`,
+    });
+  }
+  const events = mergeSchedule(kept, additions);
+  const keptIds = new Set(kept.map((e) => e.id));
+  const added = events.filter((e) => !keptIds.has(e.id));
+  const conflicts = added.flatMap((e) =>
+    kept
+      .filter((other) => other.start < e.end && other.end > e.start)
+      .map((other) => ({ date: e.start.slice(0, 10), title: other.title })),
+  );
+  return {
+    events,
+    removed: outdated.length,
+    added: added.length,
+    start,
+    end,
+    conflicts,
+  };
+}

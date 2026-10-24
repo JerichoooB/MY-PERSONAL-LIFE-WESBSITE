@@ -6,6 +6,7 @@ import {
   validateSchedule,
   previewSchedule,
   mergeSchedule,
+  graphicsScheduleCorrection,
 } from "../src/schedule.js";
 const template = JSON.parse(
   readFileSync(
@@ -17,9 +18,9 @@ const options = {
   end: "2026-11-01",
   choices: { cordillera: "A", pathfit: "morning" },
 };
-test("photo schedule expands to 17 weekly meetings with only the selected alternatives", () => {
+test("photo schedule expands to 16 weekly meetings with only the selected alternatives", () => {
   const p = previewSchedule(template, options);
-  assert.equal(p.events.length, 17);
+  assert.equal(p.events.length, 16);
   assert.equal(p.classes.length, 9);
   assert.equal(p.conflicts.length, 0);
   assert.equal(p.events.filter((e) => e.title.startsWith("ITW 211")).length, 2);
@@ -55,7 +56,7 @@ test("section B and afternoon PE import on Friday/Saturday without overlapping d
     ...options,
     choices: { cordillera: "B", pathfit: "afternoon" },
   });
-  assert.equal(p.events.length, 17);
+  assert.equal(p.events.length, 16);
   assert.ok(
     p.events.some(
       (e) => e.title.startsWith("PATHFIT") && e.start === "2026-10-31T13:00",
@@ -81,7 +82,7 @@ test("reimport is idempotent and preserves existing records, including edited im
   const merged = mergeSchedule(before, added);
   assert.deepEqual(merged, before);
   assert.equal(previewSchedule(template, options, before).events.length, 0);
-  assert.equal(previewSchedule(template, options, before).skipped, 17);
+  assert.equal(previewSchedule(template, options, before).skipped, 16);
   const edited = added.map((e, i) =>
     i ? e : { ...e, title: "My customized title" },
   );
@@ -107,8 +108,8 @@ test("date range includes boundaries, holidays are excluded, and conflicts are r
   const conflict = {
     id: "x",
     title: "Study group",
-    start: "2026-10-27T13:00",
-    end: "2026-10-27T14:00",
+    start: "2026-10-26T13:00",
+    end: "2026-10-26T14:00",
   };
   const p = previewSchedule(template, options, [conflict]);
   assert.equal(p.conflicts.length, 1);
@@ -135,4 +136,68 @@ test("invalid templates, missing choices, dates, and oversized ranges fail befor
     edit(value);
     assert.throws(() => validateSchedule(value));
   }
+});
+
+test("Graphics moves to Monday 1–2 PM for new imports", () => {
+  const p = previewSchedule(template, options);
+  const graphics = p.events.filter((e) => e.title.startsWith("ITW 213"));
+  assert.equal(graphics.length, 1);
+  assert.equal(graphics[0].start, "2026-10-26T13:00");
+  assert.equal(graphics[0].end, "2026-10-26T14:00");
+});
+test("existing Graphics correction removes legacy slots once and preserves other events", () => {
+  const old = structuredClone(template);
+  const g = old.classes.find((c) => c.id === "itw213");
+  g.days = [2, 4];
+  g.end = "14:30";
+  const before = previewSchedule(old, { ...options, end: "2026-11-08" }).events;
+  const unrelated = {
+    id: "manual",
+    title: "Lunch",
+    start: "2026-10-26T13:30",
+    end: "2026-10-26T14:00",
+  };
+  const p = graphicsScheduleCorrection([...before, unrelated]);
+  assert.equal(p.removed, 4);
+  assert.equal(p.added, 2);
+  assert.equal(p.conflicts.length, 1);
+  assert.ok(p.events.includes(unrelated));
+  assert.equal(p.events.filter((e) => e.id.includes(":itw213:")).length, 2);
+  assert.equal(graphicsScheduleCorrection(p.events), null);
+  const newMonday = previewSchedule(template, options).events.find((e) =>
+    e.id.includes(":itw213:"),
+  );
+  assert.equal(graphicsScheduleCorrection([...before, newMonday]).added, 1);
+});
+test("correction leaves manually edited slots alone and stays within imported dates", () => {
+  const g = {
+    id: "schedule:second-year-schedule:itw213:2026-10-27",
+    title: "ITW 213 · Graphics Designing (Photoshop)",
+    start: "2026-10-27T13:00",
+    end: "2026-10-27T14:30",
+  };
+  assert.equal(
+    graphicsScheduleCorrection([{ ...g, title: "Custom class" }]),
+    null,
+  );
+  const p = graphicsScheduleCorrection([g]);
+  assert.equal(p.removed, 1);
+  assert.equal(p.added, 0);
+  assert.deepEqual(p.events, []);
+});
+
+test("Graphics correction respects Mondays excluded from the original import", () => {
+  const old = structuredClone(template);
+  const g = old.classes.find((c) => c.id === "itw213");
+  g.days = [2, 4];
+  g.end = "14:30";
+  const before = previewSchedule(old, {
+    ...options,
+    end: "2026-11-08",
+    exclude: ["2026-11-02"],
+  }).events;
+  const p = graphicsScheduleCorrection(before);
+  assert.equal(p.removed, 4);
+  assert.equal(p.added, 1);
+  assert.ok(!p.events.some((e) => e.id.includes(":itw213:2026-11-02")));
 });
