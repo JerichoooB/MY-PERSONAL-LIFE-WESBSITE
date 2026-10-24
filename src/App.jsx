@@ -2081,15 +2081,17 @@ function Finance() {
     setDraft: setBudget,
     dirty: budgetDirty,
     reset: resetBudget,
-  } = useDraft(data.settings.budget);
+  } = useDraft(String(data.settings.budget));
   const saveBudget = () => {
     const value = Number(budget);
     if (String(budget).trim() === "" || !Number.isFinite(value) || value < 0) {
       notify("Enter a valid budget of zero or more.");
       return;
     }
-    if (update("settings", (s) => ({ ...s, budget: value })))
+    if (update("settings", (s) => ({ ...s, budget: value }))) {
+      setBudget(String(value));
       notify("Monthly budget saved.");
+    }
   };
   const [month, setMonth] = useState(dateKey().slice(0, 7));
   const tx = data.transactions.filter((t) => t.date.startsWith(month));
@@ -2133,10 +2135,13 @@ function Finance() {
             Monthly budget
             <input
               aria-label="Monthly budget"
-              type="number"
-              min="0"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
+              placeholder="0.00"
               value={budget}
+              onFocus={(e) => {
+                if (e.currentTarget.value === "0") e.currentTarget.select();
+              }}
               onChange={(e) => setBudget(e.target.value)}
             />
           </label>

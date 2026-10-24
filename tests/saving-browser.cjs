@@ -143,6 +143,26 @@ const assert = require("node:assert/strict");
   await budget.fill("0");
   await page.getByRole("button", { name: "Save budget", exact: true }).click();
   assert.equal((await stored()).settings.budget, 0);
+  await page.reload();
+  assert.equal(await budget.inputValue(), "0");
+  await budget.focus();
+  await page.keyboard.press("Backspace");
+  assert.equal(await budget.inputValue(), "", "the saved zero can be erased");
+  assert.equal(
+    (await stored()).settings.budget,
+    0,
+    "blank draft must not change saved budget",
+  );
+  await budget.pressSequentially("2500.50");
+  assert.equal(
+    await budget.inputValue(),
+    "2500.50",
+    "typing does not retain a leading zero",
+  );
+  await page.getByRole("button", { name: "Save budget", exact: true }).click();
+  assert.equal((await stored()).settings.budget, 2500.5);
+  await budget.fill("0");
+  await page.getByRole("button", { name: "Save budget", exact: true }).click();
   await budget.fill("100");
   await page.evaluate(() => {
     window.savedSetItem = Storage.prototype.setItem;
