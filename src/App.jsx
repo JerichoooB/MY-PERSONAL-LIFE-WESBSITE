@@ -72,6 +72,8 @@ import Markdown from "react-markdown";
 import Offline from "./Offline";
 import GlobalSearch from "./GlobalSearch";
 import ScheduleImport from "./ScheduleImport";
+import SaveActions, { useDraft } from "./SaveActions";
+import useToday from "./useToday";
 import { TimeInput, DateTimeInput } from "./TimeInput";
 import { formatTime } from "./time.js";
 import { mergeSchedule, graphicsScheduleCorrection } from "./schedule.js";
@@ -206,21 +208,25 @@ function App() {
   const dataRef = useRef(data);
   const setData = useCallback((value) => {
     const next = typeof value === "function" ? value(dataRef.current) : value;
-    dataRef.current = next;
-    if (!next.loadError) {
-      try {
-        repository.save(next);
-        saveError.current = false;
-      } catch {
-        if (!saveError.current) {
-          setToast(
-            "Storage is full or unavailable. Export your data to keep your changes.",
-          );
-          saveError.current = true;
-        }
-      }
+    if (next.loadError) {
+      setToast(
+        "Recover or reset the unreadable workspace before saving changes.",
+      );
+      return false;
     }
+    try {
+      repository.save(next);
+      saveError.current = false;
+    } catch {
+      setToast(
+        "Could not save: storage is full or unavailable. Free some space and try again.",
+      );
+      saveError.current = true;
+      return false;
+    }
+    dataRef.current = next;
     setDataState(next);
+    return true;
   }, []);
   useEffect(() => {
     document.documentElement.dataset.theme = data.settings.theme;
@@ -257,7 +263,7 @@ function App() {
       [key]: typeof fn === "function" ? fn(d[key]) : fn,
     }));
   const put = (key, item) => {
-    update(key, (items) =>
+    return update(key, (items) =>
       items.some((i) => i.id === item.id)
         ? items.map((i) => (i.id === item.id ? item : i))
         : [item, ...items],
@@ -273,14 +279,28 @@ function App() {
       completed: !t.completed,
       completedAt: t.completed ? null : new Date().toISOString(),
     });
-  const toggleHabit = (h) => {
+  const checkInHabit = (h) => {
     const today = dateKey();
-    put("habits", {
-      ...h,
-      dates: h.dates.includes(today)
-        ? h.dates.filter((d) => d !== today)
-        : [...h.dates, today],
-    });
+    if (
+      update("habits", (items) =>
+        items.map((item) =>
+          item.id === h.id && !item.dates.includes(today)
+            ? { ...item, dates: [...item.dates, today] }
+            : item,
+        ),
+      )
+    )
+      setToast("Checked today. Saved on this device.");
+  };
+  const undoHabit = (h) => {
+    const today = dateKey();
+    update("habits", (items) =>
+      items.map((item) =>
+        item.id === h.id
+          ? { ...item, dates: item.dates.filter((d) => d !== today) }
+          : item,
+      ),
+    );
   };
   const confirm = (message, run) => setConfirmation({ message, run });
   const ctx = {
@@ -291,7 +311,8 @@ function App() {
     remove,
     open,
     toggleTask,
-    toggleHabit,
+    checkInHabit,
+    undoHabit,
     confirm,
     notify: setToast,
   };
@@ -1792,9 +1813,82 @@ function Diary() {
     </>
   );
 }
+function GoalCard({ goal }) {
+  const { open, put, notify } = useApp();
+  const { draft: g, setDraft, dirty, reset } = useDraft(goal);
+  return (
+    <article className="goal-card" key={g.id}>
+      <div className="card-title">
+        <span className="goal-symbol">
+          <Target size={20} />
+        </span>
+        <button
+          className="icon-button"
+          aria-label="Edit goal"
+          onClick={() => open("goals", g)}
+        >
+          <Pencil size={16} />
+        </button>
+        <DeleteItem collection="goals" id={g.id} />
+      </div>
+      <h3>{g.title}</h3>
+      <p>{g.description}</p>
+      <div className="goal-meta">
+        <Badge>
+          {g.kind === "savings"
+            ? "Savings goal"
+            : g.progress === 100
+              ? "Completed"
+              : "In progress"}
+        </Badge>
+        <span>{nice(g.date)}</span>
+      </div>
+      <div className="progress-label">
+        <span>Progress</span>
+        <strong>{g.progress}%</strong>
+      </div>
+      <input
+        aria-label={`Progress for ${g.title}`}
+        type="range"
+        min="0"
+        max="100"
+        value={g.progress}
+        onChange={(e) => setDraft({ ...g, progress: Number(e.target.value) })}
+      />
+      <div className="checklist">
+        {g.milestones.map((m) => (
+          <label key={m.id}>
+            <input
+              type="checkbox"
+              checked={m.done}
+              onChange={() =>
+                setDraft({
+                  ...g,
+                  milestones: g.milestones.map((x) =>
+                    x.id === m.id ? { ...x, done: !x.done } : x,
+                  ),
+                })
+              }
+            />
+            {m.title}
+          </label>
+        ))}
+      </div>
+      <SaveActions
+        dirty={dirty}
+        label="Save progress"
+        saveLabel={`Save progress for ${g.title}`}
+        onCancel={reset}
+        onSave={() => {
+          if (put("goals", g)) notify("Goal progress saved.");
+        }}
+      />
+    </article>
+  );
+}
 function Goals() {
-  const { data, open, put, toggleHabit } = useApp();
-  const today = dateKey();
+  const { data, open, checkInHabit, undoHabit } = useApp();
+  const today = useToday();
   const [historyMonth, setHistoryMonth] = useState(today.slice(0, 7));
   return (
     <>
@@ -1843,66 +1937,7 @@ function Goals() {
         {data.goals.length ? (
           <div className="goal-grid">
             {data.goals.map((g) => (
-              <article className="goal-card" key={g.id}>
-                <div className="card-title">
-                  <span className="goal-symbol">
-                    <Target size={20} />
-                  </span>
-                  <button
-                    className="icon-button"
-                    aria-label="Edit goal"
-                    onClick={() => open("goals", g)}
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <DeleteItem collection="goals" id={g.id} />
-                </div>
-                <h3>{g.title}</h3>
-                <p>{g.description}</p>
-                <div className="goal-meta">
-                  <Badge>
-                    {g.kind === "savings"
-                      ? "Savings goal"
-                      : g.progress === 100
-                        ? "Completed"
-                        : "In progress"}
-                  </Badge>
-                  <span>{nice(g.date)}</span>
-                </div>
-                <div className="progress-label">
-                  <span>Progress</span>
-                  <strong>{g.progress}%</strong>
-                </div>
-                <input
-                  aria-label={`Progress for ${g.title}`}
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={g.progress}
-                  onChange={(e) =>
-                    put("goals", { ...g, progress: Number(e.target.value) })
-                  }
-                />
-                <div className="checklist">
-                  {g.milestones.map((m) => (
-                    <label key={m.id}>
-                      <input
-                        type="checkbox"
-                        checked={m.done}
-                        onChange={() =>
-                          put("goals", {
-                            ...g,
-                            milestones: g.milestones.map((x) =>
-                              x.id === m.id ? { ...x, done: !x.done } : x,
-                            ),
-                          })
-                        }
-                      />
-                      {m.title}
-                    </label>
-                  ))}
-                </div>
-              </article>
+              <GoalCard key={g.id} goal={g} />
             ))}
           </div>
         ) : (
@@ -1996,15 +2031,31 @@ function Goals() {
                       </span>
                     ))}
                   </div>
-                  <Button
-                    secondary={!h.dates.includes(today)}
-                    onClick={() => toggleHabit(h)}
-                  >
-                    <Check size={15} />
-                    {h.dates.includes(today)
-                      ? "Completed today"
-                      : "Check in today"}
-                  </Button>
+                  <div className="habit-checkin-controls">
+                    <Button
+                      className={`button habit-checkin ${h.dates.includes(today) ? "is-checked" : "secondary"}`}
+                      secondary={!h.dates.includes(today)}
+                      disabled={h.dates.includes(today)}
+                      aria-pressed={h.dates.includes(today)}
+                      onClick={() => checkInHabit(h)}
+                    >
+                      <Check size={16} />
+                      {h.dates.includes(today)
+                        ? "Checked today"
+                        : "Check in today"}
+                    </Button>
+                    {h.dates.includes(today) && (
+                      <small>
+                        <span>✓ Saved for today</span>
+                        <button
+                          className="undo-checkin"
+                          onClick={() => undoHabit(h)}
+                        >
+                          Undo check-in
+                        </button>
+                      </small>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -2024,7 +2075,22 @@ function Goals() {
   );
 }
 function Finance() {
-  const { data, open, update } = useApp();
+  const { data, open, update, notify } = useApp();
+  const {
+    draft: budget,
+    setDraft: setBudget,
+    dirty: budgetDirty,
+    reset: resetBudget,
+  } = useDraft(data.settings.budget);
+  const saveBudget = () => {
+    const value = Number(budget);
+    if (String(budget).trim() === "" || !Number.isFinite(value) || value < 0) {
+      notify("Enter a valid budget of zero or more.");
+      return;
+    }
+    if (update("settings", (s) => ({ ...s, budget: value })))
+      notify("Monthly budget saved.");
+  };
   const [month, setMonth] = useState(dateKey().slice(0, 7));
   const tx = data.transactions.filter((t) => t.date.startsWith(month));
   const income = tx
@@ -2062,21 +2128,26 @@ function Finance() {
           value={month}
           onChange={(e) => setMonth(e.target.value || dateKey().slice(0, 7))}
         />
-        <label className="inline-label">
-          Monthly budget{" "}
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={data.settings.budget}
-            onChange={(e) =>
-              update("settings", (s) => ({
-                ...s,
-                budget: Math.max(0, Number(e.target.value)),
-              }))
-            }
+        <div className="budget-editor">
+          <label className="inline-label">
+            Monthly budget
+            <input
+              aria-label="Monthly budget"
+              type="number"
+              min="0"
+              step="0.01"
+              value={budget}
+              onChange={(e) => setBudget(e.target.value)}
+            />
+          </label>
+          <SaveActions
+            compact
+            label="Save budget"
+            dirty={budgetDirty}
+            onCancel={resetBudget}
+            onSave={saveBudget}
           />
-        </label>
+        </div>
       </div>
       <div className="stats-grid">
         <Stat
@@ -2291,6 +2362,95 @@ function safeUrl(url) {
     return undefined;
   }
 }
+function ProjectCard({ project }) {
+  const { open, put, notify } = useApp();
+  const { draft: p, setDraft, dirty, reset } = useDraft(project);
+  return (
+    <article className="project-card" key={p.id}>
+      <div className="card-title">
+        <span className="project-symbol">
+          <Code2 size={24} />
+        </span>
+        <Badge color={p.status === "Completed" ? "low" : "purple"}>
+          {p.status}
+        </Badge>
+        <button
+          className="icon-button"
+          aria-label="Edit project"
+          onClick={() => open("projects", p)}
+        >
+          <Pencil size={16} />
+        </button>
+        <DeleteItem collection="projects" id={p.id} />
+      </div>
+      <h2>{p.title}</h2>
+      <p>{p.description}</p>
+      <div className="stack-tags">
+        {p.stack
+          .split(",")
+          .filter(Boolean)
+          .map((s, i) => (
+            <Badge key={i}>{s.trim()}</Badge>
+          ))}
+      </div>
+      <div className="progress-label">
+        <span>Progress</span>
+        <b>{p.progress}%</b>
+      </div>
+      <Progress value={p.progress} />
+      <div className="project-dates">
+        <span>Started {nice(p.start)}</span>
+        <span>Target {nice(p.date)}</span>
+      </div>
+      <div className="checklist">
+        {p.checklist.map((t) => (
+          <label key={t.id}>
+            <input
+              type="checkbox"
+              checked={t.done}
+              onChange={() =>
+                setDraft({
+                  ...p,
+                  checklist: p.checklist.map((x) =>
+                    x.id === t.id ? { ...x, done: !x.done } : x,
+                  ),
+                })
+              }
+            />
+            {t.title}
+          </label>
+        ))}
+      </div>
+      {p.notes && <p className="project-notes">{p.notes}</p>}
+      <div className="project-links">
+        {safeUrl(p.github) && (
+          <a href={safeUrl(p.github)} target="_blank" rel="noreferrer">
+            <Code2 size={15} />
+            Repository
+            <ArrowUpRight size={13} />
+          </a>
+        )}
+        {safeUrl(p.demo) && (
+          <a href={safeUrl(p.demo)} target="_blank" rel="noreferrer">
+            Live demo
+            <ArrowUpRight size={13} />
+          </a>
+        )}
+      </div>
+      {p.checklist.length > 0 && (
+        <SaveActions
+          dirty={dirty}
+          label="Save checklist"
+          saveLabel={`Save checklist for ${p.title}`}
+          onCancel={reset}
+          onSave={() => {
+            if (put("projects", p)) notify("Project checklist saved.");
+          }}
+        />
+      )}
+    </article>
+  );
+}
 function Projects() {
   const { data, open, put } = useApp();
   const [status, setStatus] = useState("All projects");
@@ -2329,78 +2489,7 @@ function Projects() {
       {projects.length ? (
         <div className="project-grid">
           {projects.map((p) => (
-            <article className="project-card" key={p.id}>
-              <div className="card-title">
-                <span className="project-symbol">
-                  <Code2 size={24} />
-                </span>
-                <Badge color={p.status === "Completed" ? "low" : "purple"}>
-                  {p.status}
-                </Badge>
-                <button
-                  className="icon-button"
-                  aria-label="Edit project"
-                  onClick={() => open("projects", p)}
-                >
-                  <Pencil size={16} />
-                </button>
-                <DeleteItem collection="projects" id={p.id} />
-              </div>
-              <h2>{p.title}</h2>
-              <p>{p.description}</p>
-              <div className="stack-tags">
-                {p.stack
-                  .split(",")
-                  .filter(Boolean)
-                  .map((s, i) => (
-                    <Badge key={i}>{s.trim()}</Badge>
-                  ))}
-              </div>
-              <div className="progress-label">
-                <span>Progress</span>
-                <b>{p.progress}%</b>
-              </div>
-              <Progress value={p.progress} />
-              <div className="project-dates">
-                <span>Started {nice(p.start)}</span>
-                <span>Target {nice(p.date)}</span>
-              </div>
-              <div className="checklist">
-                {p.checklist.map((t) => (
-                  <label key={t.id}>
-                    <input
-                      type="checkbox"
-                      checked={t.done}
-                      onChange={() =>
-                        put("projects", {
-                          ...p,
-                          checklist: p.checklist.map((x) =>
-                            x.id === t.id ? { ...x, done: !x.done } : x,
-                          ),
-                        })
-                      }
-                    />
-                    {t.title}
-                  </label>
-                ))}
-              </div>
-              {p.notes && <p className="project-notes">{p.notes}</p>}
-              <div className="project-links">
-                {safeUrl(p.github) && (
-                  <a href={safeUrl(p.github)} target="_blank" rel="noreferrer">
-                    <Code2 size={15} />
-                    Repository
-                    <ArrowUpRight size={13} />
-                  </a>
-                )}
-                {safeUrl(p.demo) && (
-                  <a href={safeUrl(p.demo)} target="_blank" rel="noreferrer">
-                    Live demo
-                    <ArrowUpRight size={13} />
-                  </a>
-                )}
-              </div>
-            </article>
+            <ProjectCard key={p.id} project={p} />
           ))}
         </div>
       ) : (
@@ -2429,8 +2518,14 @@ function download(blob, name) {
 function SettingsPage() {
   const { data, setData, update, confirm, notify } = useApp();
   const s = data.settings;
+  const {
+    draft: appearance,
+    setDraft: setAppearance,
+    dirty: appearanceDirty,
+    reset: resetAppearance,
+  } = useDraft({ theme: s.theme, accent: s.accent });
   const change = (key, value) =>
-    update("settings", (old) => ({ ...old, [key]: value }));
+    setAppearance((old) => ({ ...old, [key]: value }));
   const personalKeys = [
     "name",
     "avatar",
@@ -2451,8 +2546,8 @@ function SettingsPage() {
   const saveProfile = () => {
     const saved = { ...profile, name: profile.name.trim() };
     setProfile(saved);
-    update("settings", (old) => ({ ...old, ...saved }));
-    notify("Personalization saved on this device.");
+    if (update("settings", (old) => ({ ...old, ...saved })))
+      notify("Personalization saved on this device.");
   };
   const fileRef = useRef();
   const importFile = async (e) => {
@@ -2613,7 +2708,7 @@ function SettingsPage() {
                   ["light", "Light", Sun],
                 ].map(([key, label, Icon]) => (
                   <button
-                    className={s.theme === key ? "selected" : ""}
+                    className={appearance.theme === key ? "selected" : ""}
                     onClick={() => change("theme", key)}
                     key={key}
                   >
@@ -2626,7 +2721,7 @@ function SettingsPage() {
                     <span>
                       <Icon size={16} />
                       {label}
-                      {s.theme === key && <Check size={15} />}
+                      {appearance.theme === key && <Check size={15} />}
                     </span>
                   </button>
                 ))}
@@ -2641,17 +2736,26 @@ function SettingsPage() {
                       style={{ background: c }}
                       onClick={() => change("accent", c)}
                     >
-                      {s.accent === c && <Check size={16} />}
+                      {appearance.accent === c && <Check size={16} />}
                     </button>
                   ))}
                   <input
                     aria-label="Custom accent color"
                     type="color"
-                    value={s.accent}
+                    value={appearance.accent}
                     onChange={(e) => change("accent", e.target.value)}
                   />
                 </div>
               </label>
+              <SaveActions
+                label="Save appearance"
+                dirty={appearanceDirty}
+                onCancel={resetAppearance}
+                onSave={() => {
+                  if (update("settings", (old) => ({ ...old, ...appearance })))
+                    notify("Appearance saved.");
+                }}
+              />
             </div>
           </Panel>
           <Panel
@@ -3103,9 +3207,9 @@ function Editor({ kind, item, extra, close }) {
           throw Error(
             "All is reserved for viewing every category. Choose another name.",
           );
-        update("categories", (c) => [...c, value.title]);
+        if (!update("categories", (c) => [...c, value.title])) return;
         extra.onCreated?.(value.title);
-      } else put(kind, value);
+      } else if (!put(kind, value)) return;
       notify(
         kind === "category" ? "Category created." : "Saved to your workspace.",
       );

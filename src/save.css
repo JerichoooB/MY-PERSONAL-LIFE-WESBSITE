@@ -1,0 +1,92 @@
+.save-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 18px;
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.save-actions > span {
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.save-actions > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.save-actions .button {
+  padding: 9px 13px;
+  font-size: 11px;
+  min-height: 36px;
+}
+.save-actions.compact {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.budget-editor {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-left: auto;
+}
+.habit-checkin.is-checked:disabled {
+  background: #b4d9ce;
+  color: #263b34;
+  border: 1px solid #b4d9ce;
+  opacity: 1;
+  cursor: default;
+}
+.habit-checkin-controls {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.habit-checkin-controls .button {
+  width: 100%;
+}
+.habit-checkin-controls > small {
+  color: var(--muted);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.habit-checkin-controls .undo-checkin {
+  font-size: 10px;
+  color: var(--muted);
+  text-decoration: underline;
+  padding: 4px;
+}
+.habit-checkin-controls .undo-checkin:hover {
+  color: var(--text);
+}
+@media (max-width: 560px) {
+  .budget-editor {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 15px;
+  }
+  .budget-editor .inline-label {
+    flex: 1;
+  }
+  .budget-editor .save-actions {
+    width: 100%;
+    gap: 8px;
+  }
+  .budget-editor .save-actions > span {
+    font-size: 10px;
+  }
+  .save-actions .button {
+    font-size: 11px;
+  }
+  .habit-checkin-controls > small {
+    font-size: 10px;
+  }
+}

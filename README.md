@@ -33,7 +33,7 @@ npm run preview -- --port 4173
 - Projects with stack, status, dates, links, notes, and checklists.
 - Dark/light appearance, accents, profile, date/currency/week preferences, JSON export/import, and confirmed reset.
 - Search palette with Ctrl/⌘ K, type filters, highlighted matches, keyboard navigation, and page shortcuts. Existing title/content search matching is preserved.
-- Personalization uses Save changes and Cancel; appearance updates still save immediately.
+- Personalization uses Save changes and Cancel; Appearance, monthly budget, goal progress/milestones, and project checklists have explicit Save and Cancel controls.
 - Custom task categories appear as wrapping chips and are selected after creation.
 - Reminders for due/overdue tasks.
 
@@ -77,3 +77,5 @@ You can download the template from that dialog and import a compatible schedule 
 Graphics Designing (ITW 213) is scheduled Monday 1:00–2:00 PM and Tuesday 1:00–2:30 PM. Only the original Thursday slot moved to Monday. Calendar's **Apply class change** removes recognizable imported Thursday slots and preserves Tuesday; it also restores missing Tuesdays if the earlier Monday-only correction was applied. It previews replacement counts and overlaps and preserves other records. Replacements are limited to dates present in the imported schedule, respecting excluded holidays and partial-week boundaries.
 
 All displayed clock times use 12-hour AM/PM, including tasks, agendas, schedule previews, and task/event editing controls. Storage keeps sortable `HH:mm` local wall times, preserving existing data. `npm run test:time` checks midnight/noon, AM/PM editing, persisted values, and previews in a browser configured for a 24-hour locale.
+
+Habit check-ins save immediately and remain marked **Checked today** until the next local day; undoing a check-in is a separate action. Existing check-in history and streaks are preserved. `npm run test:saving` checks check-in persistence/day rollover, manual Save/Cancel flows, and storage failure handling in an isolated browser.

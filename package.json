@@ -12,7 +12,8 @@
     "format": "prettier --write src tests vite.config.js index.html README.md package.json",
     "test:ui": "node tests/ui-updates.cjs",
     "test:schedule": "node tests/schedule-browser.cjs",
-    "test:time": "node tests/time-browser.cjs"
+    "test:time": "node tests/time-browser.cjs",
+    "test:saving": "node tests/saving-browser.cjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.0",

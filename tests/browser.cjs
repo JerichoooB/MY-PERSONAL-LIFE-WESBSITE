@@ -116,8 +116,14 @@ const artifacts = fs.mkdtempSync("/tmp/lifeos-browser-");
   await page.getByLabel("Display name", { exact: true }).fill("Jericho");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await page.getByRole("button", { name: "Light", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Save appearance", exact: true })
+    .click();
   assert.equal(await page.locator("html").getAttribute("data-theme"), "light");
   await page.getByRole("button", { name: "Dark", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Save appearance", exact: true })
+    .click();
   const downloadEvent = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const download = await downloadEvent;

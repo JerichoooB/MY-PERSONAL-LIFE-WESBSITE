@@ -72,6 +72,9 @@ const fs = require("node:fs");
   await page.getByLabel("Default currency").selectOption("USD");
   assert.equal((await stored()).settings.name, original);
   await page.getByRole("button", { name: "Light", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Save appearance", exact: true })
+    .click();
   assert.equal(
     await page.getByLabel("Display name", { exact: true }).inputValue(),
     "Riri",
@@ -177,6 +180,9 @@ const fs = require("node:fs");
   const artifacts = fs.mkdtempSync("/tmp/lifeos-ui-");
   await go("/settings");
   await page.getByRole("button", { name: "Dark", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Save appearance", exact: true })
+    .click();
   await page.getByRole("button", { name: "Open global search" }).click();
   await search.fill("homepage");
   await page.screenshot({ path: artifacts + "/search-desktop.png" });
