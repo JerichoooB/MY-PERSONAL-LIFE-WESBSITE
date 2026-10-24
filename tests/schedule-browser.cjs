@@ -63,18 +63,18 @@ const path = require("node:path");
   await modal.getByText("class events to add", { exact: true }).waitFor();
   assert.equal(
     await modal
-      .getByRole("button", { name: "Import 16 class events", exact: true })
+      .getByRole("button", { name: "Import 17 class events", exact: true })
       .isDisabled(),
     true,
   );
   await modal.getByLabel("Import despite these overlaps").check();
   await modal
-    .getByRole("button", { name: "Import 16 class events", exact: true })
+    .getByRole("button", { name: "Import 17 class events", exact: true })
     .click();
   let data = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("lifeos.v1")),
   );
-  assert.equal(data.events.length, 17);
+  assert.equal(data.events.length, 18);
   assert.equal(data.notes[0].content, "My existing data");
   assert.ok(data.events.some((e) => e.id === "existing"));
   await page.reload();
@@ -94,7 +94,7 @@ const path = require("node:path");
   await modal
     .getByLabel("PATHFIT 3 time", { exact: true })
     .selectOption("morning");
-  await modal.getByText(/16 already imported, skipped/).waitFor();
+  await modal.getByText(/17 already imported, skipped/).waitFor();
   assert.equal(
     await modal
       .getByRole("button", { name: /Import .*class events/ })
@@ -110,7 +110,7 @@ const path = require("node:path");
   assert.equal(
     (await page.evaluate(() => JSON.parse(localStorage.getItem("lifeos.v1"))))
       .events.length,
-    17,
+    18,
   );
   assert.equal(
     await page.evaluate(
@@ -126,6 +126,7 @@ const path = require("node:path");
       "utf8",
     ),
   );
+  legacy.classes = legacy.classes.filter((c) => c.id !== "itw213-tuesday");
   const graphics = legacy.classes.find((c) => c.id === "itw213");
   graphics.days = [2, 4];
   graphics.end = "14:30";
@@ -163,8 +164,8 @@ const path = require("node:path");
     JSON.parse(localStorage.getItem("lifeos.v1")),
   );
   assert.equal(
-    changed.events.filter((e) => e.id.includes(":itw213:")).length,
-    1,
+    changed.events.filter((e) => e.title.startsWith("ITW 213")).length,
+    2,
   );
   assert.ok(
     changed.events.some(
@@ -172,6 +173,19 @@ const path = require("node:path");
         e.id.includes(":itw213:") &&
         e.start === "2026-10-26T13:00" &&
         e.end === "2026-10-26T14:00",
+    ),
+  );
+  assert.ok(
+    changed.events.some(
+      (e) =>
+        e.title.startsWith("ITW 213") &&
+        e.start === "2026-10-27T13:00" &&
+        e.end === "2026-10-27T14:30",
+    ),
+  );
+  assert.ok(
+    !changed.events.some(
+      (e) => e.title.startsWith("ITW 213") && e.start.startsWith("2026-10-29"),
     ),
   );
   assert.ok(changed.events.some((e) => e.id === "keep"));
@@ -183,7 +197,7 @@ const path = require("node:path");
     0,
   );
   console.log(
-    "PASS existing schedule correction: legacy T/Th removed, Monday 1–2 added once, other data preserved.",
+    "PASS existing schedule correction: Thursday removed, Tuesday retained, Monday 1–2 added once, other data preserved.",
   );
   assert.deepEqual(errors, []);
   console.log(

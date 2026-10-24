@@ -1301,13 +1301,14 @@ function CalendarPage() {
           <div>
             <strong>Graphics class schedule changed</strong>
             <p>
-              ITW 213 is now Monday, 1:00–2:00 PM, replacing Tuesday/Thursday
+              Move Thursday's ITW 213 to Monday, 1:00–2:00 PM. Tuesday stays
               1:00–2:30 PM.
             </p>
             <small>
-              {correction.removed} old class events will be removed;{" "}
-              {correction.added} Monday events will be added within your
-              imported dates ({correction.start} to {correction.end}).
+              {correction.removed} Thursday events will be removed;{" "}
+              {correction.addedMonday} Monday and {correction.addedTuesday}{" "}
+              missing Tuesday events will be added within your imported dates (
+              {correction.start} to {correction.end}).
               {correction.conflicts.length > 0 &&
                 ` ${correction.conflicts.length} overlap(s) with existing events.`}
             </small>
@@ -1316,7 +1317,7 @@ function CalendarPage() {
             secondary
             onClick={() =>
               confirm(
-                `Apply the Graphics class change? Remove ${correction.removed} old Tuesday/Thursday slots and add ${correction.added} Monday 1:00–2:00 PM slots within your imported dates.${
+                `Apply the Graphics class change? Remove ${correction.removed} Thursday slots, add ${correction.addedMonday} Monday 1:00–2:00 PM slots, and restore ${correction.addedTuesday} missing Tuesday 1:00–2:30 PM slots within your imported dates. Existing Tuesday classes are kept.${
                   correction.conflicts.length
                     ? ` This overlaps ${correction.conflicts
                         .map((c) => `${c.title} on ${c.date}`)
@@ -1329,7 +1330,9 @@ function CalendarPage() {
                     "events",
                     (old) => graphicsScheduleCorrection(old)?.events || old,
                   );
-                  notify("Graphics moved to Monday, 1:00–2:00 PM.");
+                  notify(
+                    "Graphics: Monday 1:00–2:00 PM and Tuesday 1:00–2:30 PM. Thursday removed.",
+                  );
                 },
               )
             }

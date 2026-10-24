@@ -170,44 +170,62 @@ export function mergeSchedule(existing, additions) {
   ];
 }
 
-// Correct only recognizable imported Graphics slots; unrelated/manual events stay intact.
+// Move Thursday only; retain Tuesday and repair the earlier Monday-only import.
 export function graphicsScheduleCorrection(existing) {
-  const prefix = "schedule:second-year-schedule:itw213:";
+  const prefix = "schedule:second-year-schedule:";
+  const courseId = (e) =>
+    e.id.startsWith(prefix + "itw213:") ||
+    e.id.startsWith(prefix + "itw213-tuesday:");
+  const weekday = (e) => new Date(`${e.start.slice(0, 10)}T12:00:00`).getDay();
   const title = "ITW 213 · Graphics Designing (Photoshop)";
-  const outdated = existing.filter(
+  const course = existing.filter(
     (e) =>
-      e.id.startsWith(prefix) &&
+      courseId(e) &&
       e.title === title &&
       e.start.slice(11) === "13:00" &&
-      e.end.slice(11) === "14:30" &&
-      [2, 4].includes(new Date(`${e.start.slice(0, 10)}T12:00:00`).getDay()),
+      ((weekday(e) === 1 && e.end.slice(11) === "14:00") ||
+        ([2, 4].includes(weekday(e)) && e.end.slice(11) === "14:30")),
   );
-  if (!outdated.length) return null;
+  if (!course.length) return null;
+  const outdated = course.filter((e) => weekday(e) === 4);
+  const removed = new Set(outdated.map((e) => e.id));
+  const kept = existing.filter((e) => !removed.has(e.id));
   const dates = existing
-    .filter((e) => e.id.startsWith("schedule:second-year-schedule:"))
+    .filter((e) => e.id.startsWith(prefix))
     .map((e) => e.start.slice(0, 10))
     .sort();
   const importedDays = new Set(dates);
   const start = dates[0],
     end = dates.at(-1);
-  const removed = new Set(outdated.map((e) => e.id));
-  const kept = existing.filter((e) => !removed.has(e.id));
+  const weeks = new Map();
+  for (const e of course) {
+    const day = e.start.slice(0, 10);
+    const monday = addDays(day, -((weekday(e) + 6) % 7));
+    if (!weeks.has(monday)) weeks.set(monday, e);
+  }
   const additions = [];
-  for (const event of outdated) {
-    const oldDate = event.start.slice(0, 10);
-    const day = new Date(`${oldDate}T12:00:00`).getDay();
-    const monday = addDays(oldDate, -((day + 6) % 7));
-    if (monday < start || monday > end || !importedDays.has(monday)) continue;
-    additions.push({
-      ...event,
-      id: prefix + monday,
-      start: `${monday}T13:00`,
-      end: `${monday}T14:00`,
-    });
+  for (const [monday, event] of weeks) {
+    for (const slot of [
+      { date: monday, id: "itw213", end: "14:00" },
+      { date: addDays(monday, 1), id: "itw213-tuesday", end: "14:30" },
+    ]) {
+      if (
+        !importedDays.has(slot.date) ||
+        kept.some((e) => courseId(e) && e.start.slice(0, 10) === slot.date)
+      )
+        continue;
+      additions.push({
+        ...event,
+        id: `${prefix}${slot.id}:${slot.date}`,
+        start: `${slot.date}T13:00`,
+        end: `${slot.date}T${slot.end}`,
+      });
+    }
   }
   const events = mergeSchedule(kept, additions);
   const keptIds = new Set(kept.map((e) => e.id));
   const added = events.filter((e) => !keptIds.has(e.id));
+  if (!outdated.length && !added.length) return null;
   const conflicts = added.flatMap((e) =>
     kept
       .filter((other) => other.start < e.end && other.end > e.start)
@@ -217,6 +235,8 @@ export function graphicsScheduleCorrection(existing) {
     events,
     removed: outdated.length,
     added: added.length,
+    addedMonday: added.filter((e) => weekday(e) === 1).length,
+    addedTuesday: added.filter((e) => weekday(e) === 2).length,
     start,
     end,
     conflicts,

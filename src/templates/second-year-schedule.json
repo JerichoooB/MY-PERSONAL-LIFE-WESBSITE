@@ -84,6 +84,18 @@
       "color": "#b9a8d3"
     },
     {
+      "id": "itw213-tuesday",
+      "code": "ITW 213",
+      "title": "Graphics Designing (Photoshop)",
+      "days": [2],
+      "start": "13:00",
+      "end": "14:30",
+      "room": "LAN",
+      "instructor": "S' OB",
+      "attendanceNote": "Full F2F",
+      "color": "#b9a8d3"
+    },
+    {
       "id": "itw214",
       "code": "ITW 214",
       "title": "Discrete Mathematics",
