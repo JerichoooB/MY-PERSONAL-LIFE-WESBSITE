@@ -32,7 +32,10 @@ npm run preview -- --port 4173
 - Income, expenses, monthly budgets, category charts, and savings goals.
 - Projects with stack, status, dates, links, notes, and checklists.
 - Dark/light appearance, accents, profile, date/currency/week preferences, JSON export/import, and confirmed reset.
-- Global search and reminders for due/overdue tasks.
+- Search palette with Ctrl/⌘ K, type filters, highlighted matches, keyboard navigation, and page shortcuts. Existing title/content search matching is preserved.
+- Personalization uses Save changes and Cancel; appearance updates still save immediately.
+- Custom task categories appear as wrapping chips and are selected after creation.
+- Reminders for due/overdue tasks.
 
 ## Offline phone use
 
@@ -62,3 +65,5 @@ PHP/MySQL is reserved for a future backend phase, as specified in the brief. No 
 With Vercel access, run `npx vercel login` and `npx vercel --prod` in this checkout. In this cloud environment, Node CLI requests must use `NODE_USE_ENV_PROXY=1` and writable cache/config locations, e.g. `XDG_CACHE_HOME=/workspace/vercel-cache` and `--global-config /workspace/vercel-config`. The environment network policy must allow Vercel's API/auth hosts and the deployment hostname. Do not commit Vercel credentials or `.vercel/`.
 
 A stable production URL preserves access to local browser data. Preview deployment URLs have their own browser storage; export/import backups when changing to the production domain.
+
+`npm run test:ui` checks the search palette, Personalization save/cancel behavior, and custom category visibility using an isolated Chromium context against the production preview.

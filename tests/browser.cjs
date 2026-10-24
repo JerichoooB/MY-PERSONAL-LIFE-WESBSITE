@@ -108,6 +108,7 @@ const artifacts = fs.mkdtempSync("/tmp/lifeos-browser-");
   });
   await go("/settings");
   await page.getByLabel("Display name", { exact: true }).fill("Jericho");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await page.getByRole("button", { name: "Light", exact: true }).click();
   assert.equal(await page.locator("html").getAttribute("data-theme"), "light");
   await page.getByRole("button", { name: "Dark", exact: true }).click();
@@ -210,8 +211,11 @@ const artifacts = fs.mkdtempSync("/tmp/lifeos-browser-");
   await page
     .getByRole("heading", { name: "Autosaved reflection", exact: true })
     .waitFor();
-  await page.getByLabel("Global search").fill("Autosaved reflection");
-  await page.locator(".search-results").getByRole("button").first().click();
+  await page.getByRole("button", { name: "Open global search" }).click();
+  await page
+    .getByLabel("Global search", { exact: true })
+    .fill("Autosaved reflection");
+  await page.locator(".palette-result").first().click();
   await dialog().getByLabel("Diary content").fill("An edited reflection.");
   await dialog().getByRole("button", { name: "Delete", exact: true }).click();
   await page

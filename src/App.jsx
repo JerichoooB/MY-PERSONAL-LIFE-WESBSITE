@@ -70,6 +70,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import Markdown from "react-markdown";
 import Offline from "./Offline";
+import GlobalSearch from "./GlobalSearch";
 import {
   repository,
   initialData,
@@ -193,7 +194,6 @@ function App() {
   const [confirmation, setConfirmation] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
   const [drawer, setDrawer] = useState(false);
-  const [query, setQuery] = useState("");
   const [notifications, setNotifications] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -245,7 +245,6 @@ function App() {
   }, [toast]);
   useEffect(() => {
     setDrawer(false);
-    setQuery("");
     setNotifications(false);
   }, [location.pathname]);
   const update = (key, fn) =>
@@ -299,19 +298,6 @@ function App() {
   const upcoming = data.events
     .filter((e) => new Date(e.start) >= new Date())
     .sort((a, b) => a.start.localeCompare(b.start));
-  const results = query.trim()
-    ? ["tasks", "events", "notes", "diary", "goals", "projects"]
-        .flatMap((key) =>
-          data[key]
-            .filter((i) =>
-              `${i.title} ${i.content || i.description || ""}`
-                .toLowerCase()
-                .includes(query.toLowerCase()),
-            )
-            .map((i) => ({ key, item: i })),
-        )
-        .slice(0, 12)
-    : [];
   const title =
     nav.find(([path]) => path === location.pathname)?.[1] ||
     (location.pathname === "/settings" ? "Settings" : "Overview");
@@ -415,44 +401,11 @@ function App() {
               RIRI<span>.DEV</span>
             </NavLink>
             <div className="top-actions">
-              <div className="global-search">
-                <Search size={16} />
-                <input
-                  aria-label="Global search"
-                  placeholder="Search anything…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-                <kbd>⌕</kbd>
-                {query && (
-                  <div className="search-results">
-                    <div className="search-caption">SEARCH YOUR WORKSPACE</div>
-                    {results.length ? (
-                      results.map(({ key, item }) => (
-                        <button
-                          key={key + item.id}
-                          onClick={() => {
-                            navigate(
-                              key === "events" ? "/calendar" : `/${key}`,
-                            );
-                            open(key, item);
-                            setQuery("");
-                          }}
-                        >
-                          <Search size={15} />
-                          <div>
-                            {item.title}
-                            <small>{key}</small>
-                          </div>
-                          <ArrowUpRight size={15} />
-                        </button>
-                      ))
-                    ) : (
-                      <p>No results for “{query}”</p>
-                    )}
-                  </div>
-                )}
-              </div>
+              <GlobalSearch
+                data={data}
+                onOpen={open}
+                disabled={!!modal || !!confirmation || drawer}
+              />
               <button
                 className="quick-add"
                 onClick={() => open("tasks")}
@@ -712,7 +665,12 @@ function Overview() {
           <h2>{title}</h2>
           <button
             aria-label={`Add task for ${date}`}
-            onClick={() => open("tasks", null, { date })}
+            onClick={() =>
+              open("tasks", null, {
+                date,
+                category: category === "All" ? undefined : category,
+              })
+            }
           >
             <Plus size={26} />
           </button>
@@ -751,7 +709,14 @@ function Overview() {
                 ? "A little intention goes a long way."
                 : "Leave a little room for tomorrow."}
             </span>
-            <button onClick={() => open("tasks", null, { date })}>
+            <button
+              onClick={() =>
+                open("tasks", null, {
+                  date,
+                  category: category === "All" ? undefined : category,
+                })
+              }
+            >
               <Plus size={17} />
               {coral ? "Plan your first task" : "Add a task"}
             </button>
@@ -852,14 +817,19 @@ function Overview() {
           <button
             className="round-add"
             aria-label="New Task"
-            onClick={() => open("tasks")}
+            onClick={() =>
+              open("tasks", null, {
+                category: category === "All" ? undefined : category,
+              })
+            }
           >
             <Plus size={29} />
           </button>
         </div>
         <div className="category-chips">
-          {["All", ...data.categories].slice(0, 5).map((c) => (
+          {["All", ...data.categories].map((c) => (
             <button
+              aria-pressed={category === c}
               className={category === c ? "active" : ""}
               key={c}
               onClick={() => setCategory(c)}
@@ -870,10 +840,11 @@ function Overview() {
           ))}
           <button
             className="category-more"
-            aria-label="More task categories"
-            onClick={() => open("category")}
+            aria-label="Add category"
+            onClick={() => open("category", null, { onCreated: setCategory })}
           >
             <Plus size={19} />
+            <span>Add category</span>
           </button>
         </div>
         {taskCard(today, "Today", true)}
@@ -1157,7 +1128,11 @@ function Tasks() {
         title="Tasks"
         description="Clear your mind. Make a plan. Get things done."
         action={
-          <Button onClick={() => open("tasks")}>
+          <Button
+            onClick={() =>
+              open("tasks", null, { category: category || undefined })
+            }
+          >
             <Plus size={17} />
             New task
           </Button>
@@ -1221,7 +1196,10 @@ function Tasks() {
             <option value="priority">Priority</option>
             <option value="createdAt">Newest first</option>
           </select>
-          <button className="text-link" onClick={() => open("category")}>
+          <button
+            className="text-link"
+            onClick={() => open("category", null, { onCreated: setCategory })}
+          >
             + Category
           </button>
         </div>
@@ -1250,7 +1228,11 @@ function Tasks() {
             title="Nothing on your list"
             text="Add a task or adjust your filters."
             action={
-              <Button onClick={() => open("tasks")}>
+              <Button
+                onClick={() =>
+                  open("tasks", null, { category: category || undefined })
+                }
+              >
                 <Plus size={16} />
                 Create task
               </Button>
@@ -2379,6 +2361,29 @@ function SettingsPage() {
   const s = data.settings;
   const change = (key, value) =>
     update("settings", (old) => ({ ...old, [key]: value }));
+  const personalKeys = [
+    "name",
+    "avatar",
+    "dateFormat",
+    "weekStart",
+    "currency",
+  ];
+  const personalValues = () =>
+    Object.fromEntries(personalKeys.map((key) => [key, s[key]]));
+  const [profile, setProfile] = useState(personalValues);
+  useEffect(
+    () => setProfile(personalValues()),
+    [s.name, s.avatar, s.dateFormat, s.weekStart, s.currency],
+  );
+  const editProfile = (key, value) =>
+    setProfile((old) => ({ ...old, [key]: value }));
+  const profileDirty = personalKeys.some((key) => profile[key] !== s[key]);
+  const saveProfile = () => {
+    const saved = { ...profile, name: profile.name.trim() };
+    setProfile(saved);
+    update("settings", (old) => ({ ...old, ...saved }));
+    notify("Personalization saved on this device.");
+  };
   const fileRef = useRef();
   const importFile = async (e) => {
     const f = e.target.files[0];
@@ -2412,19 +2417,30 @@ function SettingsPage() {
         >
           <div className="settings-body">
             <div className="profile-settings">
-              <Avatar />
+              <span className="avatar">
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt="Profile preview" />
+                ) : (
+                  (profile.name || "You")
+                    .split(" ")
+                    .map((word) => word[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()
+                )}
+              </span>
               <div>
-                <strong>{s.name || "Your personal workspace"}</strong>
+                <strong>{profile.name || "Your personal workspace"}</strong>
                 <small>Everything starts with you.</small>
               </div>
             </div>
             <label>
               Display name
               <input
-                value={s.name}
+                value={profile.name}
                 maxLength={80}
                 placeholder="What should we call you?"
-                onChange={(e) => change("name", e.target.value)}
+                onChange={(e) => editProfile("name", e.target.value)}
               />
             </label>
             <label>
@@ -2446,15 +2462,15 @@ function SettingsPage() {
                     return;
                   }
                   const reader = new FileReader();
-                  reader.onload = () => change("avatar", reader.result);
+                  reader.onload = () => editProfile("avatar", reader.result);
                   reader.readAsDataURL(f);
                 }}
               />
             </label>
-            {s.avatar && (
+            {profile.avatar && (
               <button
                 className="text-link"
-                onClick={() => change("avatar", "")}
+                onClick={() => editProfile("avatar", "")}
               >
                 Use initials instead
               </button>
@@ -2463,8 +2479,8 @@ function SettingsPage() {
               <label>
                 Date format
                 <select
-                  value={s.dateFormat}
-                  onChange={(e) => change("dateFormat", e.target.value)}
+                  value={profile.dateFormat}
+                  onChange={(e) => editProfile("dateFormat", e.target.value)}
                 >
                   <option value="medium">Oct 24, 2026</option>
                   <option value="iso">2026-10-24</option>
@@ -2474,8 +2490,10 @@ function SettingsPage() {
               <label>
                 Week starts on
                 <select
-                  value={s.weekStart}
-                  onChange={(e) => change("weekStart", Number(e.target.value))}
+                  value={profile.weekStart}
+                  onChange={(e) =>
+                    editProfile("weekStart", Number(e.target.value))
+                  }
                 >
                   <option value={0}>Sunday</option>
                   <option value={1}>Monday</option>
@@ -2485,15 +2503,35 @@ function SettingsPage() {
             <label>
               Default currency
               <select
-                value={s.currency}
-                onChange={(e) => change("currency", e.target.value)}
+                value={profile.currency}
+                onChange={(e) => editProfile("currency", e.target.value)}
               >
                 {["PHP", "USD", "EUR", "GBP", "JPY", "SGD"].map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
             </label>
-            <p className="muted">Settings save automatically on this device.</p>
+            <div className="personalization-save">
+              <span className="muted" role="status">
+                {profileDirty
+                  ? "You have unsaved changes."
+                  : "Your personalization is saved on this device."}
+              </span>
+              <div>
+                {profileDirty && (
+                  <Button
+                    secondary
+                    onClick={() => setProfile(personalValues())}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                <Button onClick={saveProfile} disabled={!profileDirty}>
+                  <Check size={16} />
+                  Save changes
+                </Button>
+              </div>
+            </div>
           </div>
         </Panel>
         <div>
@@ -2695,7 +2733,7 @@ function Editor({ kind, item, extra, close }) {
       date: extra.date || today,
       time: "",
       priority: "Medium",
-      category: data.categories[0] || "Personal",
+      category: extra.category || data.categories[0] || "Personal",
       completed: false,
       completedAt: null,
       createdAt: new Date().toISOString(),
@@ -2969,7 +3007,12 @@ function Editor({ kind, item, extra, close }) {
           )
         )
           throw Error("This category already exists.");
+        if (value.title.toLowerCase() === "all")
+          throw Error(
+            "All is reserved for viewing every category. Choose another name.",
+          );
         update("categories", (c) => [...c, value.title]);
+        extra.onCreated?.(value.title);
       } else put(kind, value);
       notify(
         kind === "category" ? "Category created." : "Saved to your workspace.",

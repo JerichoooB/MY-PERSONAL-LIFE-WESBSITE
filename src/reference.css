@@ -3214,3 +3214,38 @@ footer i {
     width: 44px;
   }
 }
+.personalization-save {
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.personalization-save > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.personalization-save .muted {
+  font-size: 11px;
+  line-height: 1.6;
+}
+.category-chips {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+.category-chips .category-more {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  border: 1px dashed var(--muted);
+  padding: 9px 12px;
+}
+.category-chips .category-more > svg {
+  width: 15px;
+  height: 15px;
+}
+.category-chips .category-more:hover {
+  border-color: #b4d9ce;
+}
