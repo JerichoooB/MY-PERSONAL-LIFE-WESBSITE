@@ -71,6 +71,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Markdown from "react-markdown";
 import Offline from "./Offline";
 import GlobalSearch from "./GlobalSearch";
+import ScheduleImport from "./ScheduleImport";
+import { mergeSchedule } from "./schedule.js";
 import {
   repository,
   initialData,
@@ -1248,7 +1250,8 @@ function DeleteItem({ collection, id }) {
   return <Confirm onConfirm={() => remove(collection, id)} />;
 }
 function CalendarPage() {
-  const { data, open } = useApp();
+  const { data, open, update, notify } = useApp();
+  const [importing, setImporting] = useState(false);
   const [selected, setSelected] = useState(dateKey());
   const [month, setMonth] = useState(dateKey().slice(0, 7));
   const [view, setView] = useState("Month");
@@ -1280,12 +1283,39 @@ function CalendarPage() {
         title="Calendar"
         description="Make time for the things that matter."
         action={
-          <Button onClick={() => open("events", null, { date: selected })}>
-            <Plus size={17} />
-            New event
-          </Button>
+          <div className="button-group">
+            <Button secondary onClick={() => setImporting(true)}>
+              <Upload size={16} />
+              Import schedule
+            </Button>
+            <Button onClick={() => open("events", null, { date: selected })}>
+              <Plus size={17} />
+              New event
+            </Button>
+          </div>
         }
       />
+      {importing && (
+        <Modal
+          wide
+          title="Import weekly schedule"
+          close={() => setImporting(false)}
+        >
+          <ScheduleImport
+            existing={data.events}
+            onClose={() => setImporting(false)}
+            onImport={(events, start) => {
+              update("events", (old) => mergeSchedule(old, events));
+              setSelected(start);
+              setMonth(start.slice(0, 7));
+              setImporting(false);
+              notify(
+                `${events.length} class events added. Existing data kept.`,
+              );
+            }}
+          />
+        </Modal>
+      )}
       <div className="calendar-layout">
         <Panel title="At a glance">
           <MiniCalendar

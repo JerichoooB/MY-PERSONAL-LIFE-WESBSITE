@@ -67,3 +67,9 @@ With Vercel access, run `npx vercel login` and `npx vercel --prod` in this check
 A stable production URL preserves access to local browser data. Preview deployment URLs have their own browser storage; export/import backups when changing to the production domain.
 
 `npm run test:ui` checks the search palette, Personalization save/cancel behavior, and custom category visibility using an isolated Chromium context against the production preview.
+
+### Import a weekly class schedule
+
+Open Calendar → Import schedule. The included Second Year Schedule was transcribed from the supplied timetable image. Enter the first and last class dates (up to a year), choose Cordillera section A/B and PATHFIT morning/afternoon, and optionally exclude holidays. Review the class/time preview, then import. Events are added to School; existing workspace data is preserved, and reimporting skips existing occurrences, including ones you edited. Overlapping events require explicit acknowledgment. Times are local wall-clock Philippine class times; use Philippines time on your device. MWF/TTH are expanded into the corresponding weekdays, and F2F notes are kept in event descriptions. Holiday exclusions are manual.
+
+You can download the template from that dialog and import a compatible schedule JSON later. This is an additive calendar import, separate from Settings → Import workspace (which restores a complete backup). `npm run test:schedule` verifies the import UI against the production preview in an isolated browser context.

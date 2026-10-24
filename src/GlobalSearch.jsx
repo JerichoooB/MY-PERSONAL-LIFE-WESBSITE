@@ -103,7 +103,8 @@ export default function GlobalSearch({ data, onOpen, disabled = false }) {
         e.key.toLowerCase() === "k" &&
         !e.altKey
       ) {
-        if (disabled) return;
+        if (disabled || (!opened && document.querySelector('[role="dialog"]')))
+          return;
         e.preventDefault();
         if (opened) close();
         else show();

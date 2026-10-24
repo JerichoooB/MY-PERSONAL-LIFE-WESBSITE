@@ -10,7 +10,8 @@
     "test": "node --test tests/*.test.js",
     "test:browser": "node tests/browser.cjs",
     "format": "prettier --write src tests vite.config.js index.html README.md package.json",
-    "test:ui": "node tests/ui-updates.cjs"
+    "test:ui": "node tests/ui-updates.cjs",
+    "test:schedule": "node tests/schedule-browser.cjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.0",

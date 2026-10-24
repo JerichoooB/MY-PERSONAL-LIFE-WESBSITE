@@ -1,0 +1,167 @@
+{
+  "format": "lifeos-weekly-schedule",
+  "version": 1,
+  "id": "second-year-schedule",
+  "title": "Second Year Schedule",
+  "timezone": "Asia/Manila",
+  "groups": [
+    {
+      "id": "cordillera",
+      "label": "Cordillera section",
+      "options": [
+        { "id": "A", "label": "Section A · Room 501 · M' Johamme" },
+        { "id": "B", "label": "Section B · Room TBA · S' Micko" }
+      ]
+    },
+    {
+      "id": "pathfit",
+      "label": "PATHFIT 3 time",
+      "options": [
+        { "id": "morning", "label": "Saturday · 8:00–10:00 AM" },
+        { "id": "afternoon", "label": "Saturday · 1:00–3:00 PM" }
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "id": "itw211",
+      "code": "ITW 211",
+      "title": "Computer Programming 2 (C#.Net)",
+      "days": [2, 4],
+      "start": "16:00",
+      "end": "17:30",
+      "room": "302",
+      "instructor": "S' Rico Danielo",
+      "attendanceNote": "Full F2F",
+      "color": "#df9383"
+    },
+    {
+      "id": "itw212",
+      "code": "ITW 212",
+      "title": "Fundamentals of Information Management",
+      "days": [1, 3, 5],
+      "start": "15:00",
+      "end": "16:00",
+      "room": "LAN",
+      "instructor": "S' Rico Danielo",
+      "attendanceNote": "F2F note from image: MW",
+      "color": "#a9cae8"
+    },
+    {
+      "id": "cotype01",
+      "code": "COType 01",
+      "title": "Computer Operation with Keyboarding",
+      "days": [2, 4],
+      "start": "14:30",
+      "end": "16:00",
+      "room": "302",
+      "instructor": "Doc_M",
+      "attendanceNote": "Full F2F",
+      "color": "#b4d9ce"
+    },
+    {
+      "id": "compnet1",
+      "code": "CompNet 1",
+      "title": "Computer Networking - 1",
+      "days": [1, 3, 5],
+      "start": "14:00",
+      "end": "15:00",
+      "room": "LAN",
+      "instructor": "S' OB",
+      "attendanceNote": "F2F note from image: MW",
+      "color": "#e8ce9e"
+    },
+    {
+      "id": "itw213",
+      "code": "ITW 213",
+      "title": "Graphics Designing (Photoshop)",
+      "days": [2, 4],
+      "start": "13:00",
+      "end": "14:30",
+      "room": "LAN",
+      "instructor": "S' OB",
+      "attendanceNote": "Full F2F",
+      "color": "#b9a8d3"
+    },
+    {
+      "id": "itw214",
+      "code": "ITW 214",
+      "title": "Discrete Mathematics",
+      "days": [6],
+      "start": "10:00",
+      "end": "13:00",
+      "room": "LAN",
+      "instructor": "S' Rico Danielo",
+      "attendanceNote": "Full F2F",
+      "color": "#f1bb96"
+    },
+    {
+      "id": "ias201",
+      "code": "IAS 201",
+      "title": "Information Assurance and Security - 1",
+      "days": [2, 4],
+      "start": "08:30",
+      "end": "10:00",
+      "room": "202",
+      "instructor": "M' Sophia",
+      "attendanceNote": "F2F note from image: TUES",
+      "color": "#8fc5c5"
+    },
+    {
+      "id": "cordi-a",
+      "code": "Cordi 101",
+      "title": "Cordillera History and Social Culture Heritage - A",
+      "days": [5],
+      "start": "16:00",
+      "end": "17:30",
+      "room": "501",
+      "instructor": "M' Johamme",
+      "attendanceNote": "Friday",
+      "color": "#d4b69c",
+      "group": "cordillera",
+      "option": "A"
+    },
+    {
+      "id": "cordi-b",
+      "code": "Cordi 101",
+      "title": "Cordillera History and Social Culture Heritage - B",
+      "days": [5],
+      "start": "16:00",
+      "end": "17:30",
+      "room": "TBA",
+      "instructor": "S' Micko",
+      "attendanceNote": "Friday",
+      "color": "#d4b69c",
+      "group": "cordillera",
+      "option": "B"
+    },
+    {
+      "id": "pathfit-morning",
+      "code": "PATHFIT 3",
+      "title": "Physical Activities Toward Health and Fitness: Contemporary Activities",
+      "days": [6],
+      "start": "08:00",
+      "end": "10:00",
+      "room": "301",
+      "instructor": "M' Bacoco",
+      "attendanceNote": "Full F2F",
+      "color": "#abcda2",
+      "group": "pathfit",
+      "option": "morning"
+    },
+    {
+      "id": "pathfit-afternoon",
+      "code": "PATHFIT 3",
+      "title": "Physical Activities Toward Health and Fitness: Contemporary Activities",
+      "days": [6],
+      "start": "13:00",
+      "end": "15:00",
+      "room": "301",
+      "instructor": "M' Bacoco",
+      "attendanceNote": "Full F2F",
+      "color": "#abcda2",
+      "group": "pathfit",
+      "option": "afternoon"
+    }
+  ]
+}

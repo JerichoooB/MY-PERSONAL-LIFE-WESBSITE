@@ -160,6 +160,11 @@ const fs = require("node:fs");
     .filter({ hasText: "Overview" })
     .waitFor();
   await search.press("Escape");
+  await page.waitForFunction(
+    () =>
+      document.activeElement?.getAttribute("aria-label") ===
+      "Open global search",
+  );
   assert.equal(
     await page
       .getByRole("button", { name: "Open global search" })
