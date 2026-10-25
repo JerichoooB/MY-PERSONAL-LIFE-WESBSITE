@@ -13,7 +13,8 @@
     "test:ui": "node tests/ui-updates.cjs",
     "test:schedule": "node tests/schedule-browser.cjs",
     "test:time": "node tests/time-browser.cjs",
-    "test:saving": "node tests/saving-browser.cjs"
+    "test:saving": "node tests/saving-browser.cjs",
+    "test:notifications": "node tests/notifications-browser.cjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.0",

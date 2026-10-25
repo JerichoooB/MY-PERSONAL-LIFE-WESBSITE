@@ -1,3 +1,4 @@
+import { DEFAULT_REMINDERS } from "./reminders.js";
 export const STORAGE_KEY = "lifeos.v1";
 export const dateKey = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -27,6 +28,7 @@ export const initialData = () => ({
     dateFormat: "medium",
     weekStart: 0,
     avatar: "",
+    notifications: { ...DEFAULT_REMINDERS },
   },
 });
 export function streaks(dates, today = dateKey()) {
@@ -154,6 +156,18 @@ export function validateData(d) {
   } catch {
     throw Error("Invalid currency.");
   }
+  if (d.settings.notifications === undefined)
+    d.settings.notifications = { ...DEFAULT_REMINDERS };
+  const reminders = d.settings.notifications;
+  if (
+    !reminders ||
+    typeof reminders !== "object" ||
+    !["enabled", "classes", "events", "tasks"].every(
+      (key) => typeof reminders[key] === "boolean",
+    ) ||
+    ![0, 5, 10, 15, 30, 60].includes(reminders.leadMinutes)
+  )
+    throw Error("Invalid notification settings.");
   return d;
 }
 export const repository = {

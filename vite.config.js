@@ -53,6 +53,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ["notification-events.js"],
         globPatterns: ["**/*.{js,css,html,png,svg,woff2}"],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: "index.html",

@@ -74,6 +74,8 @@ import GlobalSearch from "./GlobalSearch";
 import ScheduleImport from "./ScheduleImport";
 import SaveActions, { useDraft } from "./SaveActions";
 import useToday from "./useToday";
+import useReminders from "./useReminders";
+import NotificationSettings from "./NotificationSettings";
 import { TimeInput, DateTimeInput } from "./TimeInput";
 import { formatTime } from "./time.js";
 import { mergeSchedule, graphicsScheduleCorrection } from "./schedule.js";
@@ -204,6 +206,7 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   datePreference = data.settings.dateFormat;
+  useReminders(data, setToast);
   const saveError = useRef(false);
   const dataRef = useRef(data);
   const setData = useCallback((value) => {
@@ -1271,6 +1274,18 @@ function DeleteItem({ collection, id }) {
 }
 function CalendarPage() {
   const { data, open, update, notify, confirm } = useApp();
+  const location = useLocation();
+  useEffect(() => {
+    const requested = new URLSearchParams(location.search).get("date");
+    if (
+      requested &&
+      /^\d{4}-\d{2}-\d{2}$/.test(requested) &&
+      dateKey(new Date(`${requested}T12:00:00`)) === requested
+    ) {
+      setSelected(requested);
+      setMonth(requested.slice(0, 7));
+    }
+  }, [location.search]);
   const correction = graphicsScheduleCorrection(data.events);
   const [importing, setImporting] = useState(false);
   const [selected, setSelected] = useState(dateKey());
@@ -2829,6 +2844,14 @@ function SettingsPage() {
               </div>
             </div>
           </Panel>
+          <NotificationSettings
+            data={data}
+            notify={notify}
+            onSave={(notifications) => {
+              if (update("settings", (old) => ({ ...old, notifications })))
+                notify("Reminder settings saved.");
+            }}
+          />
           <Offline />
         </div>
       </div>

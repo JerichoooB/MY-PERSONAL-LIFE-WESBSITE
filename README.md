@@ -79,3 +79,13 @@ Graphics Designing (ITW 213) is scheduled Monday 1:00–2:00 PM and Tuesday 1:00
 All displayed clock times use 12-hour AM/PM, including tasks, agendas, schedule previews, and task/event editing controls. Storage keeps sortable `HH:mm` local wall times, preserving existing data. `npm run test:time` checks midnight/noon, AM/PM editing, persisted values, and previews in a browser configured for a 24-hour locale.
 
 Habit check-ins save immediately and remain marked **Checked today** until the next local day; undoing a check-in is a separate action. Existing check-in history and streaks are preserved. `npm run test:saving` checks check-in persistence/day rollover, manual Save/Cancel flows, and storage failure handling in an isolated browser.
+
+### System reminders and phone calendar alerts
+
+Settings → **Class & task notifications** lets the user grant OS/browser notification permission, choose classes/school events, other events, and timed incomplete tasks, select a lead time, save preferences, and send a test notification. Permission is requested only after an explicit button click and is specific to each device. Imported classes use School. Notifications display through the PWA service worker; tapping one opens the event's calendar date or the Tasks page. Delivery history suppresses repeats across reloads/tabs. Browser timers may be delayed or suspended; an at-start reminder has a one-minute catch-up window. Old backups migrate to reminders disabled by default.
+
+**These are app-running reminders, not server push.** They cannot reliably wake a fully closed/suspended web app. iPhone notifications require a supported installed Home Screen app (iOS 16.4+). OS Focus/Do Not Disturb and notification settings can suppress alerts. No push backend, push subscription, or always-on scheduled worker is included.
+
+**Export calendar with alerts** downloads upcoming selected events/timed tasks as UTC .ics events with VALARM entries. Import into a calendar application and enable that calendar's alerts for OS-managed reminders when RIRI.DEV is closed. Calendar apps control alarm support; Google Calendar imports via its web settings. Exported task blocks are 30 minutes. Export is a one-time copy, not synchronization; some calendar apps can duplicate repeated imports. Files contain the exported titles/descriptions, so share them accordingly.
+
+`npm run test:notifications` verifies native service-worker notification API acceptance, dispatch/deduplication, permission gating, .ics download alarms, and notification destination routes against the production preview. It uses an isolated browser context; it does not prove delivery on a particular physical phone.

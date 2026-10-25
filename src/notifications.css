@@ -1,0 +1,68 @@
+.notification-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.notification-status > svg {
+  flex-shrink: 0;
+}
+.notification-status.allowed {
+  color: #b4d9ce;
+}
+.notification-settings .notification-toggle,
+.notification-types > label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.notification-types {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.notification-settings .save-actions {
+  margin-top: 0;
+}
+.calendar-reminder-export {
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+.calendar-reminder-export strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.calendar-reminder-export p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+.calendar-reminder-export small {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.notification-settings .button {
+  white-space: normal;
+}
+@media (max-width: 560px) {
+  .notification-types > label,
+  .notification-settings .notification-toggle {
+    font-size: 11px;
+  }
+  .notification-status {
+    font-size: 11px;
+  }
+  .calendar-reminder-export strong {
+    font-size: 13px;
+  }
+}
