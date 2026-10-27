@@ -22,7 +22,7 @@ export default defineConfig({
       registerType: "prompt",
       includeAssets: ["icon-192.png", "icon-512.png", "apple-touch-icon.png"],
       manifest: {
-        name: "LifeOS — Personal Workspace",
+        name: "LifeOS",
         short_name: "LifeOS",
         description:
           "Your tasks, notes, habits, goals, and finances. Available offline.",
